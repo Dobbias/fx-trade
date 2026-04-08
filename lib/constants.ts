@@ -5,6 +5,8 @@ export const FX_CONTRACTS = {
   // Stablecoin (beta = 0)
   FXUSD: "0x085780639CC2cACd35E474e71f4D000e2405d8f6" as const,
   REBALANCER: "0x78c3aF23A4DeA2F630C130d2E42717587584BF05" as const,
+  // Position Manager (handles xPOSITION and sPOSITION)
+  POSITION_MANAGER: "0x78c3aF23A4DeA2F630C130d2E42717587584BF05" as const, // Same as rebalancer for now
 
   // Leverage Pairs (fTOKEN for collateral, xTOKEN for long positions)
   PAIRS: {
