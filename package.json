@@ -1,0 +1,44 @@
+{
+  "name": "protocol-fx-trade",
+  "version": "1.0.0",
+  "description": "A modern, professional trading interface for the [f(x) Protocol](https://fxprotocol.gitbook.io/fx-docs) - a decentralized leveraged trading protocol.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Dobbias/fx-trade.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Dobbias/fx-trade/issues"
+  },
+  "homepage": "https://github.com/Dobbias/fx-trade#readme",
+  "dependencies": {
+    "@reown/appkit": "^1.8.19",
+    "@tailwindcss/postcss": "^4.2.2",
+    "@tanstack/react-query": "^5.96.2",
+    "@types/node": "^25.5.2",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "autoprefixer": "^10.4.27",
+    "next": "^16.2.3",
+    "postcss": "^8.5.9",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "tailwindcss": "^4.2.2",
+    "typescript": "^6.0.2",
+    "viem": "^2.47.10",
+    "wagmi": "^3.6.1"
+  }
+}
