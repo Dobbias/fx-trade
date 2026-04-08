@@ -1,11 +1,11 @@
 "use client";
 
-import { useAppKitAccount } from "@reown/appkit/react";
+import { useAccount } from "wagmi";
 import { PositionPanel } from "./PositionPanel";
 import { TradePanel } from "./TradePanel";
 
 export function TradingInterface() {
-  const { isConnected } = useAppKitAccount();
+  const { isConnected } = useAccount();
 
   if (!isConnected) {
     return (
