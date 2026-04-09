@@ -22,9 +22,31 @@ npm install
 ## Development
 
 ```bash
-# Start development server (when configured)
+# Start development server
 npm run dev
+
+# The app will be available at http://localhost:3000
 ```
+
+## Testing (Headless Browser)
+
+The project includes a complete headless browser testing setup using Vitest + happy-dom. **No additional browser installation required** - everything runs in a simulated browser environment.
+
+```bash
+# Run all tests
+npm test
+
+# Run tests with UI interface
+npm run test:ui
+
+# Run tests once and exit
+npm run test:run
+
+# Generate coverage report
+npm run test:coverage
+```
+
+See [Testing Guide](./testing.md) for detailed testing documentation.
 
 ## Project Structure
 

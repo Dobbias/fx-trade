@@ -31,6 +31,7 @@ f(x) Protocol enables leveraged trading through:
 
 - [API & Smart Contract Research](docs/research/api-smart-contracts.md) - Comprehensive research on f(x) Protocol integration
 - [Getting Started](docs/guides/getting-started.md) - Development setup guide
+- [Testing Guide](docs/guides/testing.md) - Headless browser testing setup and usage
 
 ## Project Structure
 
