@@ -17,111 +17,177 @@ export function PositionPanel() {
   } = usePositions();
 
   const totalPnLPercent = totalValue > 0 ? (totalPnL / totalValue) * 100 : 0;
+  const isPositive = totalPnL >= 0;
 
   return (
-    <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700 p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-white">Your Positions</h2>
+    <div className="glass-card rounded-2xl overflow-hidden">
+      {/* Header */}
+      <div className="p-4 lg:p-6 border-b border-white/[0.06] flex items-center justify-between">
+        <h2 className="text-lg lg:text-xl font-semibold text-white">Your Positions</h2>
         <button
           onClick={refetch}
-          className="text-xs text-slate-400 hover:text-white transition-colors"
+          className="p-2 rounded-lg hover:bg-white/[0.04] transition-colors group"
+          disabled={isLoading}
         >
-          {isLoading ? "Refreshing..." : "Refresh"}
+          <svg
+            className={`w-5 h-5 text-zinc-500 ${isLoading ? "animate-spin" : "group-hover:text-zinc-300"}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
         </button>
       </div>
 
-      {/* Account Summary */}
-      <div className="bg-slate-700/30 rounded-lg p-4 mb-6">
-        <div className="text-sm text-slate-400 mb-1">Total Value</div>
-        <div className="text-2xl font-bold text-white">
-          {formatUSD(totalValue)}
+      {/* Portfolio Summary */}
+      <div className="p-4 lg:p-6 border-b border-white/[0.06]">
+        <div className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">Total Portfolio Value</div>
+        <div className="flex items-baseline gap-3">
+          <div className="text-3xl lg:text-4xl font-bold text-white font-mono tracking-tight">
+            {formatUSD(totalValue)}
+          </div>
         </div>
-        <div className={`text-sm mt-1 ${totalPnL >= 0 ? "text-green-400" : "text-red-400"}`}>
-          {totalPnL >= 0 ? "+" : ""}
-          {formatUSD(totalPnL)} ({totalPnLPercent >= 0 ? "+" : ""}
-          {totalPnLPercent.toFixed(2)}%)
+        <div className={`inline-flex items-center gap-2 mt-3 px-3 py-1.5 rounded-lg ${
+          isPositive ? "bg-green-500/10" : "bg-red-500/10"
+        }`}>
+          <svg className={`w-4 h-4 ${isPositive ? "text-green-400" : "text-red-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {isPositive ? (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+            )}
+          </svg>
+          <span className={`text-sm font-medium font-mono ${isPositive ? "text-green-400" : "text-red-400"}`}>
+            {isPositive ? "+" : ""}{formatUSD(totalPnL)} ({isPositive ? "+" : ""}{totalPnLPercent.toFixed(2)}%)
+          </span>
         </div>
       </div>
 
       {/* Error State */}
       {error && (
-        <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 mb-4 text-red-400 text-sm">
-          Failed to load positions: {error.message}
+        <div className="p-4 mx-4 mt-4 rounded-xl bg-red-500/10 border border-red-500/20">
+          <div className="flex items-center gap-3">
+            <svg className="w-5 h-5 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-sm text-red-400">Failed to load positions</p>
+          </div>
         </div>
       )}
 
       {/* Loading State */}
       {isLoading && positions.length === 0 && (
-        <div className="text-center py-8">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400"></div>
-          <p className="text-slate-400 mt-2">Loading positions...</p>
+        <div className="p-8 text-center">
+          <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-white/[0.04] flex items-center justify-center">
+            <div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+          </div>
+          <p className="text-sm text-zinc-500">Loading positions...</p>
         </div>
       )}
 
       {/* Empty State */}
       {!isLoading && positions.length === 0 && (
-        <div className="text-center py-8">
-          <div className="w-16 h-16 bg-slate-700/50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+        <div className="p-8 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-500/10 to-purple-600/10 flex items-center justify-center">
+            <svg className="w-8 h-8 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
           </div>
-          <p className="text-slate-400">No open positions</p>
-          <p className="text-sm text-slate-500 mt-2">Open a position to get started</p>
+          <p className="text-zinc-400 font-medium">No open positions</p>
+          <p className="text-sm text-zinc-600 mt-2">Open a position to get started</p>
         </div>
       )}
 
       {/* Positions List */}
       {!isLoading && positions.length > 0 && (
-        <div className="space-y-4">
-          {positions.map((position) => (
-            <div
-              key={position.id}
-              className="bg-slate-700/30 rounded-lg p-4 border border-slate-600/50 hover:border-slate-500 transition-colors"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${position.type === "long" ? "bg-green-400" : "bg-red-400"}`} />
-                  <span className="font-medium text-white">{position.asset}</span>
-                  <span className={`text-xs px-2 py-0.5 rounded ${position.type === "long" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>
-                    {position.leverage.toFixed(1)}x
-                  </span>
-                </div>
-                <div className={position.pnlPercent >= 0 ? "text-green-400" : "text-red-400"} text-sm font-medium>
-                  {position.pnlPercent >= 0 ? "+" : ""}{position.pnlPercent.toFixed(2)}%
-                </div>
-              </div>
+        <div className="divide-y divide-white/[0.04]">
+          {positions.map((position) => {
+            const isPosLong = position.type === "long";
+            const isPositivePnL = position.pnlPercent >= 0;
 
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Amount</span>
-                  <span className="text-white">
-                    {formatTokenAmount(position.collateralAmount, ASSETS[position.asset].decimals)} {position.asset}
-                  </span>
+            return (
+              <div
+                key={position.id}
+                className="p-4 lg:p-5 hover:bg-white/[0.02] transition-colors group"
+              >
+                {/* Position Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                      isPosLong ? "bg-green-500/10" : "bg-red-500/10"
+                    }`}>
+                      <svg className={`w-4 h-4 ${isPosLong ? "text-green-400" : "text-red-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        {isPosLong ? (
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                        ) : (
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                        )}
+                      </svg>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-white">{position.asset}</span>
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          isPosLong
+                            ? "bg-green-500/20 text-green-400"
+                            : "bg-red-500/20 text-red-400"
+                        }`}>
+                          {position.leverage.toFixed(1)}x
+                        </span>
+                      </div>
+                      <div className="text-xs text-zinc-500 mt-0.5">
+                        {isPosLong ? "Long" : "Short"} Position
+                      </div>
+                    </div>
+                  </div>
+                  <div className={`text-right ${
+                    isPositivePnL ? "text-green-400" : "text-red-400"
+                  }`}>
+                    <div className="text-sm font-medium font-mono">
+                      {isPositivePnL ? "+" : ""}{position.pnlPercent.toFixed(2)}%
+                    </div>
+                    <div className="text-xs font-mono opacity-70">
+                      {isPositivePnL ? "+" : ""}{formatUSD(position.pnlUSD)}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Value</span>
-                  <span className="text-white">{formatUSD(position.valueUSD)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">PnL</span>
-                  <span className={position.pnlUSD >= 0 ? "text-green-400" : "text-red-400"}>
-                    {position.pnlUSD >= 0 ? "+" : ""}{formatUSD(position.pnlUSD)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Liquidation Price</span>
-                  <span className="text-yellow-400">
-                    ${position.liquidationPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
-                </div>
-              </div>
 
-              <button className="w-full mt-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors text-sm font-medium">
-                Close Position
-              </button>
-            </div>
-          ))}
+                {/* Position Details */}
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="bg-[#121215] rounded-lg p-3">
+                    <div className="text-xs text-zinc-600 mb-1">Collateral</div>
+                    <div className="text-sm font-mono text-zinc-300">
+                      {formatTokenAmount(position.collateralAmount, ASSETS[position.asset].decimals)} {position.asset}
+                    </div>
+                  </div>
+                  <div className="bg-[#121215] rounded-lg p-3">
+                    <div className="text-xs text-zinc-600 mb-1">Position Value</div>
+                    <div className="text-sm font-mono text-zinc-300">
+                      {formatUSD(position.valueUSD)}
+                    </div>
+                  </div>
+                  <div className="bg-[#121215] rounded-lg p-3">
+                    <div className="text-xs text-zinc-600 mb-1">Unrealized PnL</div>
+                    <div className={`text-sm font-mono ${position.pnlUSD >= 0 ? "text-green-400" : "text-red-400"}`}>
+                      {position.pnlUSD >= 0 ? "+" : ""}{formatUSD(position.pnlUSD)}
+                    </div>
+                  </div>
+                  <div className="bg-[#121215] rounded-lg p-3">
+                    <div className="text-xs text-zinc-600 mb-1">Liquidation Price</div>
+                    <div className="text-sm font-mono text-yellow-400">
+                      ${position.liquidationPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Close Button */}
+                <button className="w-full py-2.5 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors text-sm font-medium border border-red-500/20 hover:border-red-500/30">
+                  Close Position
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
