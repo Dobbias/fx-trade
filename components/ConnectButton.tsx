@@ -1,11 +1,15 @@
 "use client";
 
-import { useAppKit, useAppKitAccount, useAppKitState } from "@reown/appkit/react";
+import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
+import { useAccount } from "wagmi";
 
 export function ConnectButton() {
   const { open } = useAppKit();
-  const { address, isConnected } = useAppKitAccount();
-  const { selectedNetworkId } = useAppKitState();
+  const { address: appkitAddress, isConnected } = useAppKitAccount();
+  const { address: wagmiAddress } = useAccount();
+
+  // Use whichever address is available
+  const address = appkitAddress || wagmiAddress;
 
   const shortenAddress = (addr: string) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;

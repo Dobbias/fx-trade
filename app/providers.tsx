@@ -3,6 +3,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AppKitProvider } from "@reown/appkit/react";
 import { mainnet, sepolia } from "@reown/appkit/networks";
+import { WagmiProvider } from "wagmi";
+import { config } from "@/lib/wagmi-config";
 import type { ReactNode } from "react";
 
 // 1. Get projectId from https://cloud.reown.com
@@ -26,13 +28,22 @@ const appKitConfig = {
 };
 
 export function Providers({ children }: { children: ReactNode }) {
-  const queryClient = new QueryClient();
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        refetchOnWindowFocus: false,
+        staleTime: 30_000, // 30 seconds
+      },
+    },
+  });
 
   return (
-    <AppKitProvider {...(appKitConfig as any)}>
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
-    </AppKitProvider>
+    <WagmiProvider config={config}>
+      <AppKitProvider {...(appKitConfig as any)}>
+        <QueryClientProvider client={queryClient}>
+          {children}
+        </QueryClientProvider>
+      </AppKitProvider>
+    </WagmiProvider>
   );
 }
