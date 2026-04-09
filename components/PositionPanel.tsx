@@ -2,7 +2,8 @@
 
 import { useAccount } from "wagmi";
 import { usePositions } from "@/lib/hooks/use-fx-protocol";
-import { formatUSD } from "@/lib/fx-protocol";
+import { formatUSD, formatTokenAmount } from "@/lib/fx-protocol";
+import { ASSETS } from "@/lib/constants";
 
 export function PositionPanel() {
   const { address } = useAccount();
@@ -94,7 +95,9 @@ export function PositionPanel() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-slate-400">Amount</span>
-                  <span className="text-white">{position.collateralAmount.toString()} {position.asset}</span>
+                  <span className="text-white">
+                    {formatTokenAmount(position.collateralAmount, ASSETS[position.asset].decimals)} {position.asset}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">Value</span>

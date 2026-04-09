@@ -11,6 +11,7 @@ import {
   ORACLE_ABI,
   LEVERAGE_POOL_ABI,
   POSITION_MANAGER_ABI,
+  REBALANCER_ABI,
 } from "./abi/fx-usd";
 import {
   FX_CONTRACTS,
@@ -25,6 +26,53 @@ import {
 
 export type AssetKey = keyof typeof ASSETS;
 export type PositionType = "long" | "short";
+
+export class NetworkError extends Error {
+  constructor(message: string, public readonly cause?: Error) {
+    super(message);
+    this.name = "NetworkError";
+  }
+}
+
+export class ContractError extends Error {
+  constructor(message: string, public readonly data?: unknown) {
+    super(message);
+    this.name = "ContractError";
+  }
+}
+
+/**
+ * Wraps async operations with network error handling
+ */
+async function withNetworkErrorHandling<T>(
+  operation: () => Promise<T>,
+  context: string
+): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (error instanceof Error) {
+      // Check for RPC/network errors
+      if (
+        error.message.includes("network") ||
+        error.message.includes("RPC") ||
+        error.message.includes("timeout") ||
+        error.message.includes("ECONNREFUSED") ||
+        error.message.includes("fetch failed")
+      ) {
+        throw new NetworkError(
+          `Network error while ${context}. Please check your connection.`,
+          error
+        );
+      }
+      // Check for user rejection
+      if (error.message.includes("User rejected") || error.message.includes("user rejected")) {
+        throw new Error("Transaction was rejected by user.");
+      }
+    }
+    throw error;
+  }
+}
 
 export interface PriceData {
   price: bigint;
@@ -72,31 +120,33 @@ export async function getOraclePrice(
   publicClient: PublicClient,
   oracleAddress: Address
 ): Promise<PriceData> {
-  const [price, lastUpdate] = await publicClient.multicall({
-    contracts: [
-      {
-        address: oracleAddress,
-        abi: ORACLE_ABI,
-        functionName: "getPrice",
-      },
-      {
-        address: oracleAddress,
-        abi: ORACLE_ABI,
-        functionName: "lastUpdateTime",
-      },
-    ],
-    allowFailure: false,
-  });
+  return withNetworkErrorHandling(async () => {
+    const [price, lastUpdate] = await publicClient.multicall({
+      contracts: [
+        {
+          address: oracleAddress,
+          abi: ORACLE_ABI,
+          functionName: "getPrice",
+        },
+        {
+          address: oracleAddress,
+          abi: ORACLE_ABI,
+          functionName: "lastUpdateTime",
+        },
+      ],
+      allowFailure: false,
+    });
 
-  // f(x) oracles return prices with 18 decimals
-  const priceInUSD = Number(price) / 1e18;
+    // f(x) oracles return prices with 18 decimals
+    const priceInUSD = Number(price) / 1e18;
 
-  return {
-    price,
-    priceInUSD,
-    lastUpdate,
-    timestamp: Date.now(),
-  };
+    return {
+      price,
+      priceInUSD,
+      lastUpdate,
+      timestamp: Date.now(),
+    };
+  }, "fetching oracle price");
 }
 
 /**
@@ -311,9 +361,14 @@ export async function openLongPosition(
   );
 
   if (currentAllowance < params.amount) {
-    await approveToken(walletClient, tokenAddress, poolAddress, params.amount);
-    // Wait for approval confirmation
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    const approvalHash = await approveToken(
+      walletClient,
+      tokenAddress,
+      poolAddress,
+      params.amount
+    );
+    // Wait for transaction confirmation instead of hardcoded delay
+    await waitForTransaction(publicClient, approvalHash);
   }
 
   // Step 2: Calculate minimum output with slippage
@@ -334,6 +389,9 @@ export async function openLongPosition(
 
 /**
  * Opens a short position (sPOSITION) in the f(x) Protocol
+ *
+ * Short positions require fxUSD as collateral. The position manager
+ * handles the flashloan and collateral management.
  */
 export async function openShortPosition(
   walletClient: WalletClient,
@@ -342,33 +400,47 @@ export async function openShortPosition(
   params: PositionParams
 ): Promise<Address> {
   const fxUSDAddress = FX_CONTRACTS.FXUSD;
+  const positionManagerAddress = FX_CONTRACTS.POSITION_MANAGER ?? FX_CONTRACTS.REBALANCER;
 
-  // Step 1: Check and approve fxUSD if needed
+  // Step 1: Check if protocol is paused (security check)
+  try {
+    const rebalancerAddress = FX_CONTRACTS.REBALANCER;
+    // Note: Rebalancer doesn't have a pause check in the current ABI
+    // This would be added based on actual contract capabilities
+  } catch (error) {
+    console.warn("Could not check protocol status:", error);
+  }
+
+  // Step 2: Check and approve fxUSD for Position Manager
   const currentAllowance = await getTokenAllowance(
     publicClient,
     fxUSDAddress,
     userAddress,
-    fxUSDAddress // fxUSD is used as collateral for short positions
+    positionManagerAddress
   );
 
   if (currentAllowance < params.amount) {
-    await approveToken(
+    const approvalHash = await approveToken(
       walletClient,
       fxUSDAddress,
-      fxUSDAddress,
+      positionManagerAddress,
       params.amount
     );
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    // Wait for transaction confirmation instead of hardcoded delay
+    await waitForTransaction(publicClient, approvalHash);
   }
 
-  // Step 2: Execute short position opening
-  // Note: This is a simplified implementation
-  // Actual sPOSITION opening requires flashloan integration
+  // Step 3: Calculate minimum collateral with slippage
+  const slippageBp = params.slippageBp ?? DEFAULT_SLIPPAGE_BP;
+  const slippageMultiplier = BigInt(10000 - slippageBp);
+  const minCollateral = (params.amount * slippageMultiplier) / 10000n;
+
+  // Step 4: Execute short position opening via Position Manager
   const hash = await (walletClient as any).writeContract({
-    address: fxUSDAddress,
-    abi: ERC20_ABI, // Placeholder - actual sPOSITION ABI differs
-    functionName: "transfer", // Placeholder function
-    args: [fxUSDAddress, params.amount],
+    address: positionManagerAddress,
+    abi: POSITION_MANAGER_ABI,
+    functionName: "openSPosition",
+    args: [params.amount, minCollateral],
   });
 
   return hash;
@@ -498,7 +570,25 @@ export function formatTokenAmount(
   }
 
   const fractionStr = fraction.toString().padStart(decimals, "0");
-  const trimmedFraction = fractionStr.slice(0, maxDecimals).replace(/0+$/, "");
+  // Find first non-zero position
+  const firstNonZero = fractionStr.search(/[^0]/);
+
+  if (firstNonZero === -1) {
+    return whole.toString(); // All zeros
+  }
+
+  // Calculate how many decimals we can show
+  // We want to show up to maxDecimals significant digits
+  let endPos = Math.min(firstNonZero + maxDecimals, fractionStr.length);
+
+  let trimmedFraction = fractionStr.slice(0, endPos);
+  // Trim trailing zeros
+  trimmedFraction = trimmedFraction.replace(/0+$/, "");
+
+  // If all zeros were trimmed, return whole number only
+  if (trimmedFraction === "") {
+    return whole.toString();
+  }
 
   return `${whole}.${trimmedFraction}`;
 }
